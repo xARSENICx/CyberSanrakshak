@@ -1,0 +1,13 @@
+{
+  "name": "@cyber-sanrakshak/client",
+  "version": "1.0.0",
+  "description": "Firewall client agent for system monitoring and rule enforcement",
+  "main": "server.py",
+  "scripts": {
+    "start": "python server.py",
+    "setup": "pip install -r requirements.txt"
+  },
+  "keywords": ["firewall", "client", "monitoring", "security"],
+  "author": "xARSENICx",
+  "license": "MIT"
+}

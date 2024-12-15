@@ -1,0 +1,34 @@
+{
+  "name": "cyber-sanrakshak",
+  "version": "1.0.0",
+  "description": "Context-Aware Firewall with ML-based Anomaly Detection",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "build": "npm run build --workspaces",
+    "start": "npm run start --workspaces",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces",
+    "setup": "npm install && npm run setup --workspaces"
+  },
+  "keywords": [
+    "firewall",
+    "security",
+    "machine-learning",
+    "anomaly-detection",
+    "network-security"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xARSENICx/CyberSanrakshak"
+  },
+  "author": "xARSENICx",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

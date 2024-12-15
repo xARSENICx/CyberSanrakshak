@@ -1,0 +1,15 @@
+{
+  "name": "@cyber-sanrakshak/ml-service",
+  "version": "1.0.0",
+  "description": "Machine Learning service for anomaly detection and traffic analysis",
+  "main": "start.py",
+  "scripts": {
+    "start": "python start.py",
+    "monitor": "python monitor.py",
+    "predict": "python prediction.py",
+    "setup": "pip install -r requirements.txt"
+  },
+  "keywords": ["machine-learning", "anomaly-detection", "security", "suricata"],
+  "author": "xARSENICx",
+  "license": "MIT"
+}
