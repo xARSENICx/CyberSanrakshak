@@ -4,6 +4,7 @@ import ctypes
 import socketio
 import psutil
 import threading
+import platform
 from scripts.static_info import collect_device_info
 from scripts.domain_mapping import start_dns_in_background
 from scripts.vpn import start_vpn_monitoring, vpn_detected_flag
@@ -99,7 +100,10 @@ class Client:
 def is_admin():
     """Check if the script is running with administrative privileges."""
     try:
-        return ctypes.windll.shell32.IsUserAnAdmin()
+        if platform.system().lower() == 'windows':
+            return ctypes.windll.shell32.IsUserAnAdmin()
+        else:  # Linux/Unix
+            return os.geteuid() == 0
     except:
         return False
 
@@ -107,11 +111,21 @@ def run_as_admin():
     """Relaunch the script with administrative privileges."""
     if sys.platform == "win32":
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, ' '.join(sys.argv), None, 1)
+    else:  # Linux/Unix
+        print("Please run this script with sudo privileges:")
+        print(f"sudo python3 {' '.join(sys.argv)}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     if not is_admin():
-        print("This script requires administrative privileges. Relaunching...")
-        run_as_admin()
+        print("This script requires administrative privileges.")
+        if platform.system().lower() == 'windows':
+            print("Relaunching with admin privileges...")
+            run_as_admin()
+        else:
+            print("Please run with sudo:")
+            print(f"sudo python3 {' '.join(sys.argv)}")
+            sys.exit(1)
     else:
         client = Client()
         client.start()

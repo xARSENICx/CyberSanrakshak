@@ -2,7 +2,7 @@ import { Router } from "express";
 import { getIO } from "../socket.js";
 import { clientMap } from "../index.js";
 import { Client } from "../db/client.js";
-import { generateNetshCommand } from "../utils/command.js";
+import { generateFirewallCommand } from "../utils/command.js";
 
 const router = Router();
 
@@ -50,8 +50,8 @@ router.post("/add-app-rulesv2", async (req, res) => {
           app.blocklist.push(rule);
       }
 
-      // Generate and execute the netsh command
-      const commands = await generateNetshCommand("add", rule, listType);
+      // Generate and execute the firewall command
+      const commands = await generateFirewallCommand("add", rule, listType);
       await client.save();
     
       const io = getIO();
@@ -111,8 +111,8 @@ router.post("/add-app-rules", async (req, res) => {
           app.blocklist.push(rule);
       
 
-      // Generate and execute the netsh command
-      const commands = await generateNetshCommand("add", rule);
+      // Generate and execute the firewall command
+      const commands = await generateFirewallCommand("add", rule);
       await client.save();
     
       const io = getIO();
@@ -165,7 +165,7 @@ router.post("/block-domain", async (req, res) => {
       return res.status(404).send({ message: "Client not found.", clientID });
   }
   rules.forEach(async (rule) => {
-      const commands = await generateNetshCommand("add", rule);
+      const commands = await generateFirewallCommand("add", rule);
 
       client.global_rules.push(rule);
       await client.save();
@@ -364,7 +364,7 @@ router.post("/add-rules" ,async (req , res ) => {
         const commands =[]
         console.log("Adding rules", rules)
         for (const rule of rules) {
-            const command = await generateNetshCommand("add",rule);
+            const command = await generateFirewallCommand("add",rule);
             commands.push(command)
         }
         res.send({message: "Rules added successfully", commands})

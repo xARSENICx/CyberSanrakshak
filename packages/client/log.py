@@ -3,13 +3,27 @@ import time
 import threading
 import subprocess
 import json
+import platform
 from shutil import copyfile
+from scripts.linux_log_monitor import LinuxFirewallMonitor
 
 def fetch_firewall_rules():
     """
-    Fetch all Windows Firewall rules using `netsh` and filter rules with "CSS" in their names.
+    Fetch firewall rules and filter rules with "CSS" in their names.
+    Cross-platform support for Windows and Linux.
 
     Returns a list of dictionaries containing rule metadata.
+    """
+    os_type = platform.system().lower()
+    
+    if os_type == 'windows':
+        return fetch_windows_firewall_rules()
+    else:
+        return fetch_linux_firewall_rules()
+
+def fetch_windows_firewall_rules():
+    """
+    Fetch Windows Firewall rules using netsh.
     """
     command = ["netsh", "advfirewall", "firewall", "show", "rule", "name=all"]
     try:
@@ -32,7 +46,18 @@ def fetch_firewall_rules():
         css_rules = [rule for rule in rules if "CSS" in rule.get("Name", "")]
         return css_rules
     except Exception as e:
-        print(f"Error fetching firewall rules: {e}")
+        print(f"Error fetching Windows firewall rules: {e}")
+        return []
+
+def fetch_linux_firewall_rules():
+    """
+    Fetch Linux firewall rules using LinuxFirewallMonitor.
+    """
+    try:
+        monitor = LinuxFirewallMonitor()
+        return monitor.fetch_firewall_rules()
+    except Exception as e:
+        print(f"Error fetching Linux firewall rules: {e}")
         return []
 
 def parse_firewall_log_line(line):
@@ -86,6 +111,7 @@ def match_log_to_rule(log_entry, rules):
 def monitor_firewall_logs(log_path, backup_dir, rules, alert_file, max_size_kb=32):
     """
     Monitor the Windows Firewall log for dropped packets and log matches to CSS_ALERTS.
+    This function is Windows-specific.
     """
     if not os.path.exists(log_path):
         print("Firewall log file not found. Ensure logging is enabled.")
@@ -127,9 +153,33 @@ def monitor_firewall_logs(log_path, backup_dir, rules, alert_file, max_size_kb=3
 
         time.sleep(1)  # Poll for new log entries every second
 
-def start_monitoring_thread(log_path, backup_dir, alert_file):
+def start_monitoring_thread(log_path=None, backup_dir=None, alert_file=None):
     """
     Start a thread to monitor the firewall logs continuously.
+    Cross-platform support for Windows and Linux.
+    """
+    os_type = platform.system().lower()
+    
+    if os_type == 'linux':
+        start_linux_monitoring(alert_file or "CSS_ALERTS.log")
+    else:
+        start_windows_monitoring(log_path, backup_dir, alert_file)
+
+def start_linux_monitoring(alert_file):
+    """
+    Start Linux firewall monitoring using LinuxFirewallMonitor.
+    """
+    try:
+        monitor = LinuxFirewallMonitor()
+        monitor.alert_file = alert_file
+        monitor.start_monitoring()
+        print(f"Linux firewall monitoring started. Alerts will be written to {alert_file}")
+    except Exception as e:
+        print(f"Error starting Linux monitoring: {e}")
+
+def start_windows_monitoring(log_path, backup_dir, alert_file):
+    """
+    Start Windows firewall monitoring.
     """
     rules = fetch_firewall_rules()
     if not rules:
@@ -144,12 +194,27 @@ def start_monitoring_thread(log_path, backup_dir, alert_file):
     monitor_thread.start()
 
 if __name__ == "__main__":
-    FIREWALL_LOG_PATH = r"C:\\Windows\\System32\\LogFiles\\Firewall\\pfirewall.log"
-    BACKUP_DIR = r"C:\\Windows\\System32\\LogFiles\\Firewall\\Backups"
-    ALERT_FILE = r"CSS_ALERTS.log"
+    os_type = platform.system().lower()
+    
+    if os_type == 'windows':
+        FIREWALL_LOG_PATH = r"C:\\Windows\\System32\\LogFiles\\Firewall\\pfirewall.log"
+        BACKUP_DIR = r"C:\\Windows\\System32\\LogFiles\\Firewall\\Backups"
+        ALERT_FILE = r"CSS_ALERTS.log"
+        start_monitoring_thread(FIREWALL_LOG_PATH, BACKUP_DIR, ALERT_FILE)
+    else:
+        ALERT_FILE = "CSS_ALERTS.log"
+        start_monitoring_thread(alert_file=ALERT_FILE)
 
-    start_monitoring_thread(FIREWALL_LOG_PATH, BACKUP_DIR, ALERT_FILE)
-
-    print("Monitoring started. Press Ctrl+C to exit.")
-    while True:
-        time.sleep(1)
+    print(f"Firewall monitoring started on {os_type}. Press Ctrl+C to exit.")
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\nMonitoring stopped.")
+        if os_type == 'linux':
+            # Stop Linux monitoring gracefully
+            try:
+                monitor = LinuxFirewallMonitor()
+                monitor.stop_monitoring()
+            except:
+                pass
